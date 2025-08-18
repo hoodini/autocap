@@ -141,9 +141,12 @@ class Florence2Captioner:
                 trust_remote_code=True
             )
             
+            # Use appropriate dtype based on device
+            dtype = torch.float16 if self.device.type == "cuda" else torch.float32
+            
             self.model = AutoModelForCausalLM.from_pretrained(
                 model_id,
-                torch_dtype=torch.float32,  # Use FP32 for CPU
+                torch_dtype=dtype,
                 trust_remote_code=True
             )
             
@@ -275,20 +278,8 @@ class Florence2Captioner:
     
     def _process_character_caption(self, caption: str) -> str:
         """Process caption for character LoRA training"""
-        character_keywords = [
-            "person", "man", "woman", "girl", "boy", "character",
-            "face", "hair", "eyes", "clothing", "outfit", "pose",
-            "expression", "standing", "sitting", "portrait"
-        ]
-        
-        words = caption.split()
-        enhanced_caption = caption
-        
-        has_character = any(keyword in caption.lower() for keyword in character_keywords)
-        if not has_character:
-            enhanced_caption = f"a character, {caption}"
-        
-        return enhanced_caption
+        # Don't add extra character prefix since trigger word already contains it
+        return caption
     
     def _process_object_caption(self, caption: str) -> str:
         """Process caption for object LoRA training"""

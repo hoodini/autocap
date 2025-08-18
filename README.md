@@ -11,14 +11,16 @@ AutoCap is a powerful, production-ready Python tool for automatically generating
 ## 🌟 Features
 
 - **🤖 Florence-2-large Model**: Leverages Microsoft's state-of-the-art vision-language model for accurate, detailed image understanding
+- **🔢 Automatic Image Renaming**: Automatically rename images to sequential numbers (1.jpg, 2.jpg, etc.) for organized datasets
 - **🎯 Multiple Captioning Modes**: Specialized modes for style, character, object, and general LoRA training
 - **⚡ Batch Processing**: Efficiently processes entire directories with smart resume capability
-- **🏷️ Trigger Word Support**: Automatically prepends/appends trigger words for LoRA training
+- **🏷️ Advanced Trigger Word Support**: Full control over trigger sentences and trigger words for LoRA activation
 - **💾 Smart Caching**: Skip already processed images, with optional overwrite
 - **🖥️ Multi-Device Support**: Automatic GPU/CPU detection with memory optimization
 - **📊 Progress Tracking**: Real-time progress bar with detailed statistics
 - **🔧 Highly Configurable**: JSON configuration support for saving and reusing settings
 - **🛡️ Robust Error Handling**: Comprehensive error handling with detailed logging
+- **📦 Complete Dataset Preparation**: All-in-one tool for renaming, captioning, and adding trigger words
 
 ## 📋 Requirements
 
@@ -43,7 +45,19 @@ pip install -r requirements.txt
 
 ## 💡 Quick Start
 
-### Basic Usage
+### Complete Dataset Preparation (Recommended)
+
+Use `prepare_dataset.py` for the full workflow - automatic renaming, captioning, and trigger word setup:
+
+```bash
+# Character LoRA with complete automation
+python prepare_dataset.py /path/to/photos \
+    --trigger-sentence "a photo of person123" \
+    --trigger-word "person123" \
+    --mode character
+```
+
+### Basic Captioning Only
 
 Caption all images in a folder with default settings:
 ```bash
@@ -67,9 +81,143 @@ python autocap.py /path/to/art --trigger "mystyle" --mode style
 python autocap.py /path/to/characters --trigger "character_name" --mode character --task MORE_DETAILED_CAPTION
 ```
 
+## 🎯 Complete Dataset Preparation Guide
+
+### NEW: Understanding Trigger Words vs Trigger Sentences
+
+**THIS IS CRUCIAL FOR LORA TRAINING SUCCESS!**
+
+#### Trigger Sentence
+- **What it is**: The complete phrase that starts every caption in your training files
+- **Example**: `"a photo of johndoe person"`
+- **Purpose**: Provides context and proper grammar for training
+
+#### Trigger Word  
+- **What it is**: The unique activation word you'll use after training
+- **Example**: `"johndoe"`
+- **Purpose**: The word you type in prompts to activate your LoRA
+
+### Step-by-Step Workflow
+
+#### 1. **Collect Your Images**
+Place all images in a single folder. Any format (jpg, png, webp, etc.) works.
+
+#### 2. **Run Complete Dataset Preparation** 
+Use `prepare_dataset.py` - it handles everything automatically:
+
+```bash
+# Character LoRA Example
+python prepare_dataset.py "./my_character_photos" \
+    --trigger-sentence "a photo of alice123 person" \
+    --trigger-word "alice123" \
+    --mode character
+```
+
+**This automatically:**
+- ✅ Renames all images to 1.jpg, 2.jpg, 3.jpg, etc.
+- ✅ Generates detailed captions using Florence-2
+- ✅ Adds your trigger sentence to the beginning of each caption
+- ✅ Creates properly formatted .txt files for training
+
+#### 3. **Result Example**
+Your dataset will look like:
+```
+dataset/
+├── 1.jpg
+├── 1.txt ("a photo of alice123 person, smiling woman with brown hair wearing a red dress...")
+├── 2.jpg  
+├── 2.txt ("a photo of alice123 person, standing in a park wearing casual clothing...")
+```
+
+#### 4. **Start Training**
+Use the trigger word `alice123` in your LoRA training configuration.
+
+### Real-World Examples
+
+#### Character LoRA (Person)
+```bash
+python prepare_dataset.py "./person_photos" \
+    --trigger-sentence "a photo of uniquename person" \
+    --trigger-word "uniquename" \
+    --mode character
+```
+**After training, use**: `uniquename person wearing a suit` in your prompts
+
+#### Art Style LoRA
+```bash
+python prepare_dataset.py "./artwork" \
+    --trigger-sentence "artwork in style of mystyle" \
+    --trigger-word "mystyle" \
+    --mode style
+```
+**After training, use**: `mystyle, portrait of a woman` in your prompts
+
+#### Object/Product LoRA
+```bash
+python prepare_dataset.py "./product_photos" \
+    --trigger-sentence "a photo of productxyz item" \
+    --trigger-word "productxyz" \
+    --mode object
+```
+**After training, use**: `productxyz item on white background` in your prompts
+
+### Important Rules for Trigger Words
+
+1. **Make them unique**: Don't use common words like "person", "style", "art"
+   - ✅ Good: `alice123`, `mystylexyz`, `productabc` 
+   - ❌ Bad: `person`, `woman`, `style`
+
+2. **Keep them simple**: Lowercase, no spaces or special characters
+   - ✅ Good: `johndoe`, `mystylenew`, `uniquename`
+   - ❌ Bad: `John-Doe`, `my style`, `unique_name`
+
+3. **Be consistent**: Use the same trigger word throughout training and inference
+
+### Advanced Options
+
+#### Only Rename Images (No Captioning)
+```bash
+python prepare_dataset.py ./images --rename-only
+```
+
+#### Caption Without Renaming
+```bash
+python prepare_dataset.py ./images --no-rename
+```
+
+#### Add Trigger to Existing Captions
+```bash
+python prepare_dataset.py ./images \
+    --no-autocap \
+    --trigger-sentence "a photo of mysubject" \
+    --trigger-word "mysubject"
+```
+
+#### Custom Starting Number for Renaming
+```bash
+python prepare_dataset.py ./images \
+    --trigger-sentence "a photo of person123" \
+    --trigger-word "person123" \
+    --start-number 100
+```
+*Results in: 100.jpg, 101.jpg, 102.jpg, etc.*
+
 ## 📖 Detailed Usage
 
-### Command Line Options
+### prepare_dataset.py Options (Complete Dataset Preparation)
+
+| Option | Description | Example |
+|--------|-------------|---------|
+| `dataset_path` | Path to the dataset directory | `./my_photos` |
+| `--trigger-sentence` | Complete phrase to start each caption | `"a photo of alice123 person"` |
+| `--trigger-word` | Unique activation word for LoRA | `"alice123"` |
+| `--mode` | Caption mode: `character`, `style`, `object`, `detailed`, `simple` | `character` |
+| `--rename-only` | Only rename images, skip captioning | |
+| `--no-rename` | Skip image renaming step | |
+| `--no-autocap` | Skip caption generation (for existing captions) | |
+| `--start-number` | Starting number for sequential renaming | `1` |
+
+### autocap.py Options (Captioning Only)
 
 | Option | Description | Default |
 |--------|-------------|---------|
