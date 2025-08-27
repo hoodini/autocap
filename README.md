@@ -71,9 +71,13 @@ python autocap.py /path/to/images
 python autocap.py "C:\labubu_images" --trigger "yuvlabub" --mode object --task MORE_DETAILED_CAPTION
 ```
 
-**For Style LoRA:**
+**For Style LoRA (e.g., Artist Style):**
 ```bash
-python autocap.py /path/to/art --trigger "mystyle" --mode style
+# Example: Rinat Hoffer kids' book illustration style
+python autocap.py "C:\Users\User\Documents\tools\ai-toolkit\datasets\rinat" \
+    --trigger "rinhofkids style, a kids sketch that shows" \
+    --mode style \
+    --task MORE_DETAILED_CAPTION
 ```
 
 **For Character LoRA:**
@@ -203,6 +207,111 @@ python prepare_dataset.py ./images \
 *Results in: 100.jpg, 101.jpg, 102.jpg, etc.*
 
 ## 📖 Detailed Usage
+
+### 🏃‍♂️ Running autocap.py - Step by Step
+
+#### Basic Usage
+```bash
+# Navigate to the autocap directory
+cd "C:\Users\User\Documents\Dev Projects\autocap"
+
+# Run with basic settings
+python autocap.py "path\to\your\images"
+```
+
+#### Advanced Usage with All Options
+
+**Windows Example (PowerShell/CMD):**
+```bash
+python autocap.py "C:\datasets\my_images" ^
+    --output "C:\datasets\captions" ^
+    --mode style ^
+    --task MORE_DETAILED_CAPTION ^
+    --trigger "mystyle" ^
+    --prepend-trigger ^
+    --max-length 500 ^
+    --device cuda ^
+    --verbose
+```
+
+**Linux/Mac Example:**
+```bash
+python autocap.py ~/datasets/my_images \
+    --output ~/datasets/captions \
+    --mode style \
+    --task MORE_DETAILED_CAPTION \
+    --trigger "mystyle" \
+    --prepend-trigger \
+    --max-length 500 \
+    --device cuda \
+    --verbose
+```
+
+#### Common Use Cases
+
+**1. Processing Large Datasets with Resume Capability:**
+```bash
+# First run - processes all images
+python autocap.py "D:\training_data\character_photos" --trigger "mychar" --mode character
+
+# If interrupted, just run again - it will skip already processed images
+python autocap.py "D:\training_data\character_photos" --trigger "mychar" --mode character
+
+# Force reprocess all images (overwrite existing captions)
+python autocap.py "D:\training_data\character_photos" --trigger "mychar" --mode character --overwrite
+```
+
+**2. Style Transfer LoRA with Custom Prefix:**
+```bash
+python autocap.py "E:\art_dataset" \
+    --trigger "artwork in the style of artistname" \
+    --mode style \
+    --task MORE_DETAILED_CAPTION \
+    --max-length 400
+```
+
+**3. Product/Object LoRA with Clean Descriptions:**
+```bash
+python autocap.py "C:\product_photos" \
+    --trigger "productabc" \
+    --mode object \
+    --remove-objects "background" "watermark" \
+    --task DETAILED_CAPTION
+```
+
+**4. Batch Processing Multiple Folders:**
+```bash
+# Create a batch script (Windows)
+@echo off
+python autocap.py "C:\dataset\folder1" --trigger "style1" --mode style
+python autocap.py "C:\dataset\folder2" --trigger "style2" --mode style  
+python autocap.py "C:\dataset\folder3" --trigger "style3" --mode style
+```
+
+#### Performance Tips
+
+**For Faster Processing:**
+```bash
+# Use GPU if available
+python autocap.py ./images --device cuda
+
+# Use simpler captions for speed
+python autocap.py ./images --task CAPTION --mode simple
+
+# Process on specific GPU
+set CUDA_VISIBLE_DEVICES=0  # Windows
+export CUDA_VISIBLE_DEVICES=0  # Linux/Mac
+python autocap.py ./images
+```
+
+**For Lower Memory Usage:**
+```bash
+# Disable FP16 if having memory issues
+python autocap.py ./images --no-fp16
+
+# Use CPU if GPU runs out of memory
+python autocap.py ./images --device cpu
+```
 
 ### prepare_dataset.py Options (Complete Dataset Preparation)
 
@@ -361,8 +470,10 @@ python autocap.py /path/to/images --no-fp16
 
 ### Slow Processing
 - Ensure GPU is detected (check logs)
-- First image takes longer due to model loading
-- Consider using DETAILED_CAPTION instead of MORE_DETAILED_CAPTION
+- First image takes longer due to model loading (~5-10 seconds)
+- Subsequent images process much faster
+- Consider using DETAILED_CAPTION instead of MORE_DETAILED_CAPTION for speed
+- On CPU, expect 4-9 seconds per image
 
 ### Installation Issues
 ```bash
@@ -371,6 +482,27 @@ pip install transformers==4.45.0
 
 # For missing dependencies
 pip install einops timm
+```
+
+### Common Issues & Solutions
+
+**Issue: Script not finding images**
+```bash
+# Check supported formats and path
+python autocap.py "C:\path\with spaces\images" --verbose
+# Use quotes for paths with spaces
+```
+
+**Issue: Captions too short/long**
+```bash
+# Adjust caption length
+python autocap.py ./images --max-length 500 --task MORE_DETAILED_CAPTION
+```
+
+**Issue: Want to update existing captions with new trigger word**
+```bash
+# Force overwrite existing captions
+python autocap.py ./images --trigger "newtrigger" --overwrite
 ```
 
 ## 🤝 Contributing
